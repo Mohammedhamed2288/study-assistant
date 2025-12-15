@@ -118,6 +118,26 @@ const StudySession: React.FC<StudySessionProps> = ({ selectedPages, onBack }) =>
   const currentItem = items[activeItemIndex];
   const currentPageData = selectedPages.find(p => p.pageIndex === currentItem.pageIndex);
 
+  // Calculate overall progress
+  const totalSteps = items.length * 2;
+  const currentProgress = items.reduce((acc, item) => {
+    switch (item.status) {
+        case ProcessStatus.COMPLETED:
+        case ProcessStatus.ERROR:
+            return acc + 2;
+        case ProcessStatus.GENERATING_AUDIO:
+            return acc + 1.5;
+        case ProcessStatus.TEXT_COMPLETE:
+            return acc + 1;
+        case ProcessStatus.GENERATING_TEXT:
+            return acc + 0.5;
+        default:
+            return acc;
+    }
+  }, 0);
+  
+  const progressPercentage = Math.min(100, Math.round((currentProgress / totalSteps) * 100));
+
   // Helper to determine if we can show text content
   const hasText = currentItem.status === ProcessStatus.TEXT_COMPLETE || 
                   currentItem.status === ProcessStatus.GENERATING_AUDIO || 
@@ -125,32 +145,46 @@ const StudySession: React.FC<StudySessionProps> = ({ selectedPages, onBack }) =>
 
   return (
     <div className="h-screen flex flex-col bg-gray-50 overflow-hidden">
-      {/* Top Bar */}
-      <div className="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between shadow-sm z-20">
-        <div className="flex items-center gap-3">
-            <button onClick={onBack} className="p-2 hover:bg-gray-100 rounded-full text-gray-500">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                </svg>
-            </button>
-            <h1 className="text-xl font-bold text-gray-800">جلسة المذاكرة</h1>
+      {/* Top Bar Container */}
+      <div className="bg-white border-b border-gray-200 shadow-sm z-20 flex flex-col">
+        <div className="px-6 py-3 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+                <button onClick={onBack} className="p-2 hover:bg-gray-100 rounded-full text-gray-500">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                    </svg>
+                </button>
+                <div className="flex flex-col">
+                    <h1 className="text-xl font-bold text-gray-800">جلسة المذاكرة</h1>
+                    <span className="text-xs text-gray-500">
+                        {progressPercentage === 100 ? 'اكتملت المعالجة' : `جاري المعالجة: ${progressPercentage}%`}
+                    </span>
+                </div>
+            </div>
+            <div className="flex gap-2">
+                {items.map((item, idx) => (
+                    <div 
+                        key={item.pageIndex}
+                        onClick={() => setActiveItemIndex(idx)}
+                        title={`Page ${idx + 1}: ${item.status}`}
+                        className={`h-2 w-8 rounded-full transition-all cursor-pointer ${
+                            idx === activeItemIndex ? 'bg-primary scale-125 ring-2 ring-primary/30' :
+                            item.status === ProcessStatus.COMPLETED ? 'bg-primary' :
+                            item.status === ProcessStatus.ERROR ? 'bg-red-400' :
+                            (item.status === ProcessStatus.TEXT_COMPLETE || item.status === ProcessStatus.GENERATING_AUDIO) ? 'bg-blue-400' :
+                            (item.status === ProcessStatus.GENERATING_TEXT) ? 'bg-yellow-400' :
+                            'bg-gray-200'
+                        }`}
+                    />
+                ))}
+            </div>
         </div>
-        <div className="flex gap-2">
-            {items.map((item, idx) => (
-                <div 
-                    key={item.pageIndex}
-                    onClick={() => setActiveItemIndex(idx)}
-                    title={`Page ${idx + 1}: ${item.status}`}
-                    className={`h-2 w-8 rounded-full transition-all cursor-pointer ${
-                        idx === activeItemIndex ? 'bg-primary scale-125 ring-2 ring-primary/30' :
-                        item.status === ProcessStatus.COMPLETED ? 'bg-primary' :
-                        item.status === ProcessStatus.ERROR ? 'bg-red-400' :
-                        (item.status === ProcessStatus.TEXT_COMPLETE || item.status === ProcessStatus.GENERATING_AUDIO) ? 'bg-blue-400' :
-                        (item.status === ProcessStatus.GENERATING_TEXT) ? 'bg-yellow-400' :
-                        'bg-gray-200'
-                    }`}
-                />
-            ))}
+        {/* Progress Bar Line */}
+        <div className="w-full h-1 bg-gray-100">
+            <div 
+                className="h-full bg-primary transition-all duration-700 ease-in-out shadow-[0_0_10px_rgba(5,150,105,0.5)]" 
+                style={{ width: `${progressPercentage}%` }}
+            />
         </div>
       </div>
 
