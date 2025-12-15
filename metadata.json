@@ -1,0 +1,5 @@
+{
+  "name": "Smart Study Mate (رفيق المذاكرة)",
+  "description": "An AI-powered study assistant that converts PDF pages into simplified Arabic explanations and audio summaries.",
+  "requestFramePermissions": []
+}
